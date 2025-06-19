@@ -4,77 +4,113 @@ const button = document.getElementById("addBtn")
 const charCount = document.getElementById("charCount")
 const hoverMsg = document.getElementById("hoverMsg")
 const list = document.getElementById("todoList")
+const deleteAllBtn = document.getElementById("deleteAll")
+const taskCounter = document.getElementById("taskCounter")
+const filterAll = document.getElementById("filterAll")
+const filterActive = document.getElementById("filterActive")
+const filterCompleted = document.getElementById("filterCompleted")
 
+let tasks = []
 
-form.addEventListener("submit", (event)=>{
-    event.preventDefault();
-    let text = input.value.trim()
-    if(text===""){
-        return
-    }
-    const li = document.createElement("li")
-    li.textContent = text
+function renderList() {
+    list.innerHTML = ""
+    const filter = document.querySelector(".filter-active")?.id
 
+    tasks.forEach((task, index) => {
+        if (
+            filter === "filterActive" && task.completed ||
+            filter === "filterCompleted" && !task.completed
+        ) return
 
+        const li = document.createElement("li")
+        li.className = task.completed ? "completed" : ""
 
-    const deleteBtn = document.createElement("button")
-    deleteBtn.textContent = "Delete"
-    deleteBtn.classList.add("deleteBtn")
-    li.appendChild(deleteBtn)
+        const span = document.createElement("span")
+        span.textContent = task.text
+        li.appendChild(span)
 
+        const editBtn = document.createElement("button")
+        editBtn.textContent = "Edit"
+        editBtn.classList.add("editBtn")
+        editBtn.onclick = () => {
+            const newText = prompt("Редагувати завдання:", task.text)
+            if (newText && newText.trim() && !tasks.some((t, i) => i !== index && t.text === newText.trim())) {
+                task.text = newText.trim()
+                renderList()
+            }
+        }
+        li.appendChild(editBtn)
 
+        const deleteBtn = document.createElement("button")
+        deleteBtn.textContent = "Delete"
+        deleteBtn.classList.add("deleteBtn")
+        deleteBtn.onclick = () => {
+            tasks.splice(index, 1)
+            renderList()
+        }
+        li.appendChild(deleteBtn)
 
-    
-    list.appendChild(li)
+        li.onclick = (e) => {
+            if (e.target.tagName !== "BUTTON") {
+                task.completed = !task.completed
+                renderList()
+            }
+        }
+
+        list.appendChild(li)
+    })
+
+    const activeCount = tasks.filter(t => !t.completed).length
+    taskCounter.textContent = `Активних завдань: ${activeCount}`
+}
+
+form.addEventListener("submit", (event) => {
+    event.preventDefault()
+    const text = input.value.trim()
+    if (text === "" || tasks.some(t => t.text === text)) return
+
+    tasks.push({ text, completed: false })
     input.value = ""
-    charCount.textContent = 0
-    input.focus()
+    charCount.textContent = "Entered symbols: 0"
+    renderList()
 })
 
-list.addEventListener("click", (event)=>{
-    const targer = event.target;
-    if(targer.classList.contains("deleteBtn"))
-    {
-        const li = targer.parentElement
-        list.removeChild(li)
-        return
-    }
-    if(targer.tagName === "LI")
-    {
-        // if(!targer.classList.contains("deleteBtn"))
-        // {
-            
-        // }
-        targer.classList.toggle("completed")
-        
-    }
-})
-
-input.addEventListener("input", (event)=>{
+input.addEventListener("input", (event) => {
     charCount.textContent = `Entered symbols: ${event.target.value.length}`
 })
 
-button.addEventListener("mouseover", ()=>{
+button.addEventListener("mouseover", () => {
     hoverMsg.textContent = "Click to add text"
 })
 
-button.addEventListener("mouseout", ()=>{
+button.addEventListener("mouseout", () => {
     hoverMsg.textContent = ""
 })
 
-list.addEventListener("mouseover", (event)=>{
-    const targer = event.target;
-    if(targer.classList.contains("deleteBtn"))
-    {
-        hoverMsg.textContent = "Click to delete li"
-    }
+deleteAllBtn.addEventListener("click", () => {
+    tasks = []
+    renderList()
 })
 
-
-list.addEventListener("mouseout", (event)=>{
-    const targer = event.target;
-    if(targer.classList.contains("deleteBtn"))
-    {
-        hoverMsg.textContent = ""
-    }
+filterAll.addEventListener("click", () => {
+    setFilter("filterAll")
 })
+
+filterActive.addEventListener("click", () => {
+    setFilter("filterActive")
+})
+
+filterCompleted.addEventListener("click", () => {
+    setFilter("filterCompleted")
+})
+
+function setFilter(id) {
+    document.querySelectorAll("#filterAll, #filterActive, #filterCompleted").forEach(btn => {
+        btn.classList.remove("filter-active")
+    })
+    document.getElementById(id).classList.add("filter-active")
+    renderList()
+}
+
+// Перший рендер
+setFilter("filterAll")
